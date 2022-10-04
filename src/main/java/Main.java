@@ -1,0 +1,27 @@
+import java.util.List;
+
+import model.Market;
+import service.FileReaderService;
+import service.impl.FileReaderServiceImpl;
+import service.FileWriterService;
+import service.impl.FileWriterServiceImpl;
+import service.ParseService;
+import service.impl.ParseServiceImpl;
+
+public class Main {
+    public static void main(String...args) {
+        long start = System.currentTimeMillis();
+        FileReaderService fileReaderService = new FileReaderServiceImpl();
+        List<String> stringList = fileReaderService.readFile("input.txt");
+
+        Market market = new Market();
+
+        ParseService parseService = new ParseServiceImpl(market);
+        List<String> toFile = parseService.parse(stringList);
+
+        FileWriterService fileWriterService = new FileWriterServiceImpl();
+        fileWriterService.writeFile("output.txt", toFile);
+        long end = System.currentTimeMillis();
+        System.out.println("total -> " + (end - start));
+    }
+}
