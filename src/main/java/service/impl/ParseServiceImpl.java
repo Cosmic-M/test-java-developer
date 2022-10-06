@@ -1,19 +1,16 @@
 package service.impl;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import model.Market;
 import service.ParseService;
 
 public class ParseServiceImpl implements ParseService {
-    private static final String BEST_BID = "best_bid";
-    private static final String BEST_ASK = "best_ask";
-    private static final String BUY = "buy";
-    private static final String BID = "bid";
-    private static final String ASK = "ask";
+    private static final String COMMA = ",";
+    private static final String SPLITERATOR = "\r\n";
+    private static final Character START_WITH_B = 'b';
+    private static final Character ENDS_WITH_D = 'd';
+    private static final int EXECUTE_SYMBOLS = 2;
     private final Market market;
 
     public ParseServiceImpl(Market market) {
@@ -21,108 +18,136 @@ public class ParseServiceImpl implements ParseService {
     }
 
     @Override
-    public List<String> parse(List<String> operations) {
-        List<String> result = new ArrayList<>();
-        for (String operation : operations) {
-            char c = operation.charAt(0);
-            if (c == 'u') {
-                update(operation);
-            } else if (c == 'o') {
-                remove(operation);
-            } else if (c == 'q') {
-                String[] request = operation.split(",");
-                switch (request[1]) {
-                    case BEST_BID -> {
-                        Integer bidKey = market.getBids().entrySet().stream()
-                                .filter(size -> size.getValue() > 0)
-                                .map(Map.Entry::getKey)
-                                .findFirst()
-                                .orElseThrow(
-                                        () -> new RuntimeException("Cannot get element from bids. "
-                                                + "Looks like map has no bids with size > 0"));
-                        result.add(bidKey.toString() + "," + market.getBids().get(bidKey));
+    public StringBuilder parse(StringBuilder operations) {
+        StringBuilder result = new StringBuilder();
+        boolean firstLine = true;
+        while (operations.length() > EXECUTE_SYMBOLS) {
+            char c = operations.charAt(0);
+            operations.delete(0, 2);
+            switch (c) {
+                case 'u':
+                    int splitIndex = operations.indexOf(COMMA);
+                    int price = Integer.parseInt(operations.substring(0, splitIndex));
+                    operations.delete(0, ++splitIndex);
+                    splitIndex = operations.indexOf(COMMA);
+                    int size = Integer.parseInt(operations.substring(0, splitIndex));
+                    operations.delete(0, ++splitIndex);
+                    if (operations.charAt(0) == START_WITH_B) {
+                        updateBids(price, size);
+                    } else {
+                        updateAsks(price, size);
                     }
-                    case BEST_ASK -> {
-                        Integer askKey = market.getAsks().entrySet().stream()
-                                .filter(size -> size.getValue() > 0)
-                                .map(Map.Entry::getKey)
-                                .findFirst()
-                                .orElseThrow(
-                                        () -> new RuntimeException("Cannot get element from asks. "
-                                                + "Looks like map has no asks with size > 0"));
-                        result.add(askKey.toString() + "," + market.getAsks().get(askKey));
+                    splitIndex = operations.indexOf(COMMA);
+                    operations.delete(0, --splitIndex);
+                    break;
+                case 'q':
+                    if (!firstLine) {
+                        result.append(System.lineSeparator());
+                    } else {
+                        firstLine = false;
                     }
-                    default -> {
-                        Integer bigPrice = Integer.valueOf(request[2]);
-                        Integer quantity = market.getBids().get(bigPrice);
-                        if (quantity == null) {
-                            quantity = market.getAsks().get(bigPrice);
-                            if (quantity == null) {
-                                quantity = 0;
-                            }
+                    if (operations.charAt(0) == START_WITH_B) {
+                        char endsWith = operations.charAt(7);
+                        if (endsWith == ENDS_WITH_D) {
+                            int bidKey = market.getBids().entrySet().stream()
+                                    .filter(element -> element.getValue() > 0)
+                                    .map(Map.Entry::getKey)
+                                    .findFirst()
+                                    .orElseThrow(
+                                            () -> new RuntimeException("Cannot get element from bids. "
+                                                    + "Looks like map has no bids with size > 0"));
+                            result.append(bidKey)
+                                    .append(",")
+                                    .append(market.getBids().get(bidKey));
+                        } else {
+                            int askKey = market.getAsks().entrySet().stream()
+                                    .filter(element -> element.getValue() > 0)
+                                    .map(Map.Entry::getKey)
+                                    .findFirst()
+                                    .orElseThrow(
+                                            () -> new RuntimeException("Cannot get element from asks. "
+                                                    + "Looks like map has no asks with size > 0"));
+                            result.append(askKey)
+                                    .append(",")
+                                    .append(market.getAsks().get(askKey));
                         }
-                        result.add(quantity.toString());
+                    } else {
+                        splitIndex = operations.indexOf(COMMA);
+                        operations.delete(0, ++splitIndex);
+                        splitIndex = operations.indexOf(SPLITERATOR);
+                        price = Integer.parseInt(operations.substring(0, splitIndex));
+                        result.append(querySizeByPrice(price));
                     }
-                }
-            } else {
-                throw new RuntimeException("Incorrect input data. Operation should start with "
-                        + "symbols 'u', 'o' or 'q'. Check input file and restart app");
+                    splitIndex = operations.indexOf(COMMA);
+                    operations.delete(0, --splitIndex);
+                    break;
+                default:
+                    splitIndex = operations.indexOf(COMMA);
+                    int nextSplitIndex = operations.indexOf(SPLITERATOR);
+                    int sizeToRemove = Integer.parseInt(operations.substring(++splitIndex, nextSplitIndex));
+                    if (operations.charAt(0) == START_WITH_B) {
+                        removeFromAsks(sizeToRemove);
+                    } else {
+                        removeFromBids(sizeToRemove);
+                    }
+                    splitIndex = operations.indexOf(COMMA, nextSplitIndex);
+                    operations.delete(0, --splitIndex);
+                    break;
             }
         }
         return result;
     }
 
-    private void update(String operation) {
-        String[] request = operation.split(",");
-        if (request[3].equals(BID)) {
-            TreeMap<Integer, Integer> asks = market.getAsks();
-            Integer costBid = Integer.valueOf(request[1]);
-            int sizeBid = Integer.parseInt(request[2]);
-            for (Map.Entry<Integer, Integer> entry : asks.entrySet()) {
-                if (entry.getValue() < 0) {
-                    continue;
-                }
-                if (costBid >= entry.getKey()) {
-                    if (sizeBid >= 0) {
-                        sizeBid -= (entry.getValue());
-                        entry.setValue(0);
-                    } else {
-                        entry.setValue(entry.getValue() - sizeBid);
-                        return;
-                    }
+    private void updateBids(int price, int size) {
+        TreeMap<Integer, Integer> asks = market.getAsks();
+        for (Map.Entry<Integer, Integer> entry : asks.entrySet()) {
+            if (entry.getValue() < 0) {
+                continue;
+            }
+            if (price >= entry.getKey()) {
+                if (size >= 0) {
+                    size -= (entry.getValue());
+                    entry.setValue(0);
+                } else {
+                    entry.setValue(entry.getValue() - size);
+                    return;
                 }
             }
-            market.getBids().put(costBid, sizeBid);
-        } else if (request[3].equals(ASK)) {
-            TreeMap<Integer, Integer> bids = market.getBids();
-            Integer costAsk = Integer.valueOf(request[1]);
-            int sizeAsk = Integer.parseInt(request[2]);
-            for (Map.Entry<Integer, Integer> entry : bids.entrySet()) {
-                if (entry.getValue() < 0) {
-                    continue;
-                }
-                if (costAsk <= entry.getKey()) {
-                    if (sizeAsk >= entry.getValue()) {
-                        sizeAsk -= entry.getValue();
-                        entry.setValue(0);
-                    } else {
-                        entry.setValue(entry.getValue() - sizeAsk);
-                        return;
-                    }
-                }
-            }
-            market.getAsks().put(costAsk, sizeAsk);
-        } else {
-            throw new RuntimeException("Incorrect input data. field should be "
-                    + "'bid' or 'ask'. Check input file and restart app");
         }
+        market.getBids().put(price, size);
     }
 
-    private void remove(String operation) {
-        String[] request = operation.split(",");
-        String typeOperation = request[1];
-        int sizeToSubtract = Integer.parseInt(request[2]);
-        if (BUY.equals(typeOperation)) {
+    private void updateAsks(int price, int size) {
+        TreeMap<Integer, Integer> bids = market.getBids();
+        for (Map.Entry<Integer, Integer> entry : bids.entrySet()) {
+            if (entry.getValue() < 0) {
+                continue;
+            }
+            if (price <= entry.getKey()) {
+                if (size >= entry.getValue()) {
+                    size -= entry.getValue();
+                    entry.setValue(0);
+                } else {
+                    entry.setValue(entry.getValue() - size);
+                    return;
+                }
+            }
+        }
+        market.getAsks().put(price, size);
+    }
+
+    private int querySizeByPrice(int price) {
+        Integer quantity = market.getBids().get(price);
+        if (quantity == null) {
+            quantity = market.getAsks().get(price);
+            if (quantity == null) {
+                return 0;
+            }
+        }
+        return quantity;
+    }
+
+    private void removeFromAsks(int sizeToSubtract) {
             TreeMap<Integer, Integer> asks = market.getAsks();
             for (Map.Entry<Integer, Integer> entry : asks.entrySet()) {
                 if (entry.getValue() < 0) {
@@ -137,8 +162,10 @@ public class ParseServiceImpl implements ParseService {
                 }
             }
             throw new RuntimeException("Cannot operate remove operation with 'BUY', because you "
-                    + " have no sufficient stored goods corresponds to request quantity!");
+                    + " have no enough stored goods corresponds to request quantity!");
         }
+
+    private void removeFromBids(int sizeToSubtract) {
         TreeMap<Integer, Integer> bids = market.getBids();
         for (Map.Entry<Integer, Integer> entry : bids.entrySet()) {
             if (entry.getValue() < 0) {
@@ -153,6 +180,6 @@ public class ParseServiceImpl implements ParseService {
             }
         }
         throw new RuntimeException("Cannot operate remove operation with 'SELL', because you "
-                + "have no adequate stored goods corresponds to request quantity!");
+                + "have no enough stored goods corresponds to request quantity!");
     }
 }
