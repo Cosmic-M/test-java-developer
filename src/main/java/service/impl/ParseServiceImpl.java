@@ -1,7 +1,6 @@
 package service.impl;
 
 import java.util.Map;
-import java.util.TreeMap;
 import model.Market;
 import service.ParseService;
 
@@ -10,21 +9,18 @@ public class ParseServiceImpl implements ParseService {
     private static final Character START_WITH_B = 'b';
     private static final Character ENDS_WITH_D = 'd';
     private static final int EXECUTE_SYMBOLS = 2;
-    private final Market market;
+    private static final int BEST_OPERATION_STRING_SIZE = 7;
+    private final Market market = Market.getInstance();
 
-    public ParseServiceImpl(Market market) {
-        this.market = market;
-    }
 
     @Override
     public StringBuilder parse(StringBuilder operations) {
         StringBuilder result = new StringBuilder();
         boolean firstLine = true;
         while (operations.length() > EXECUTE_SYMBOLS) {
-            char c = operations.charAt(0);
-            operations.delete(0, 2);
-            switch (c) {
+            switch (operations.charAt(0)) {
                 case 'u':
+                    operations.delete(0, 2);
                     int splitIndex = operations.indexOf(COMMA);
                     int price = Integer.parseInt(operations.substring(0, splitIndex));
                     operations.delete(0, ++splitIndex);
@@ -40,15 +36,16 @@ public class ParseServiceImpl implements ParseService {
                     operations.delete(0, --splitIndex);
                     break;
                 case 'q':
+                    operations.delete(0, 2);
                     if (!firstLine) {
                         result.append("\n");
                     } else {
                         firstLine = false;
                     }
                     if (operations.charAt(0) == START_WITH_B) {
-                        char endsWith = operations.charAt(7);
+                        char endsWith = operations.charAt(BEST_OPERATION_STRING_SIZE);
                         if (endsWith == ENDS_WITH_D) {
-                            int bidKey = market.getBids().entrySet().stream()
+                            int bidKey = market.bids.entrySet().stream()
                                     .filter(element -> element.getValue() > 0)
                                     .map(Map.Entry::getKey)
                                     .findFirst()
@@ -57,9 +54,9 @@ public class ParseServiceImpl implements ParseService {
                                                     + "Looks like map has no bids with size > 0"));
                             result.append(bidKey)
                                     .append(",")
-                                    .append(market.getBids().get(bidKey));
+                                    .append(market.bids.get(bidKey));
                         } else {
-                            int askKey = market.getAsks().entrySet().stream()
+                            int askKey = market.asks.entrySet().stream()
                                     .filter(element -> element.getValue() > 0)
                                     .map(Map.Entry::getKey)
                                     .findFirst()
@@ -68,7 +65,7 @@ public class ParseServiceImpl implements ParseService {
                                                     + "Looks like map has no asks with size > 0"));
                             result.append(askKey)
                                     .append(",")
-                                    .append(market.getAsks().get(askKey));
+                                    .append(market.asks.get(askKey));
                         }
                     } else {
                         splitIndex = operations.indexOf(COMMA);
@@ -81,6 +78,7 @@ public class ParseServiceImpl implements ParseService {
                     operations.delete(0, --splitIndex);
                     break;
                 default:
+                    operations.delete(0, 2);
                     splitIndex = operations.indexOf(COMMA);
                     int nextSplitIndex = operations.indexOf(COMMA, splitIndex + 1);
                     int sizeToRemove = Integer.parseInt(operations.substring(++splitIndex, --nextSplitIndex));
@@ -98,8 +96,7 @@ public class ParseServiceImpl implements ParseService {
     }
 
     private void updateBids(int price, int size) {
-        TreeMap<Integer, Integer> asks = market.getAsks();
-        for (Map.Entry<Integer, Integer> entry : asks.entrySet()) {
+        for (Map.Entry<Integer, Integer> entry : market.asks.entrySet()) {
             if (entry.getValue() < 0) {
                 continue;
             }
@@ -113,12 +110,11 @@ public class ParseServiceImpl implements ParseService {
                 }
             }
         }
-        market.getBids().put(price, size);
+        market.bids.put(price, size);
     }
 
     private void updateAsks(int price, int size) {
-        TreeMap<Integer, Integer> bids = market.getBids();
-        for (Map.Entry<Integer, Integer> entry : bids.entrySet()) {
+        for (Map.Entry<Integer, Integer> entry : market.bids.entrySet()) {
             if (entry.getValue() < 0) {
                 continue;
             }
@@ -132,13 +128,13 @@ public class ParseServiceImpl implements ParseService {
                 }
             }
         }
-        market.getAsks().put(price, size);
+        market.asks.put(price, size);
     }
 
     private int querySizeByPrice(int price) {
-        Integer quantity = market.getBids().get(price);
+        Integer quantity = market.bids.get(price);
         if (quantity == null) {
-            quantity = market.getAsks().get(price);
+            quantity = market.asks.get(price);
             if (quantity == null) {
                 return 0;
             }
@@ -147,8 +143,7 @@ public class ParseServiceImpl implements ParseService {
     }
 
     private void removeFromAsks(int sizeToSubtract) {
-            TreeMap<Integer, Integer> asks = market.getAsks();
-            for (Map.Entry<Integer, Integer> entry : asks.entrySet()) {
+            for (Map.Entry<Integer, Integer> entry : market.asks.entrySet()) {
                 if (entry.getValue() < 0) {
                     continue;
                 }
@@ -165,8 +160,7 @@ public class ParseServiceImpl implements ParseService {
         }
 
     private void removeFromBids(int sizeToSubtract) {
-        TreeMap<Integer, Integer> bids = market.getBids();
-        for (Map.Entry<Integer, Integer> entry : bids.entrySet()) {
+        for (Map.Entry<Integer, Integer> entry : market.bids.entrySet()) {
             if (entry.getValue() < 0) {
                 continue;
             }

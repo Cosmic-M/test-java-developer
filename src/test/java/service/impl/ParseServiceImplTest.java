@@ -11,8 +11,8 @@ class ParseServiceImplTest {
 
     @BeforeEach
     public void initial() {
-        Market market = new Market();
-        parseService = new ParseServiceImpl(market);
+        parseService = new ParseServiceImpl();
+        Market.clearMaps();
     }
 
     @Test

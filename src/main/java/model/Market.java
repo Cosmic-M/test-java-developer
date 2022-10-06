@@ -5,14 +5,24 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class Market {
-    private final Map<Integer, Integer> bids = new TreeMap<>(Comparator.reverseOrder());
-    private final Map<Integer, Integer> asks = new TreeMap<>();
+    private static Market instance;
+    public Map<Integer, Integer> bids;
+    public Map<Integer, Integer> asks;
 
-    public TreeMap<Integer, Integer> getBids() {
-        return (TreeMap<Integer, Integer>) bids;
+    private Market() {
+        bids = new TreeMap<>(Comparator.reverseOrder());
+        asks = new TreeMap<>();
     }
 
-    public TreeMap<Integer, Integer> getAsks() {
-        return (TreeMap<Integer, Integer>) asks;
+    public static Market getInstance() {
+        if (instance == null) {
+            instance = new Market();
+        }
+        return instance;
+    }
+
+    public static void clearMaps() {
+        instance.bids.clear();
+        instance.asks.clear();
     }
 }
