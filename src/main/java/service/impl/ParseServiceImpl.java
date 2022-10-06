@@ -7,7 +7,6 @@ import service.ParseService;
 
 public class ParseServiceImpl implements ParseService {
     private static final String COMMA = ",";
-    private static final String SPLITERATOR = "\r\n";
     private static final Character START_WITH_B = 'b';
     private static final Character ENDS_WITH_D = 'd';
     private static final int EXECUTE_SYMBOLS = 2;
@@ -42,7 +41,7 @@ public class ParseServiceImpl implements ParseService {
                     break;
                 case 'q':
                     if (!firstLine) {
-                        result.append(System.lineSeparator());
+                        result.append("\n");
                     } else {
                         firstLine = false;
                     }
@@ -74,8 +73,8 @@ public class ParseServiceImpl implements ParseService {
                     } else {
                         splitIndex = operations.indexOf(COMMA);
                         operations.delete(0, ++splitIndex);
-                        splitIndex = operations.indexOf(SPLITERATOR);
-                        price = Integer.parseInt(operations.substring(0, splitIndex));
+                        splitIndex = operations.indexOf(COMMA);
+                        price = Integer.parseInt(operations.substring(0, --splitIndex));
                         result.append(querySizeByPrice(price));
                     }
                     splitIndex = operations.indexOf(COMMA);
@@ -83,8 +82,8 @@ public class ParseServiceImpl implements ParseService {
                     break;
                 default:
                     splitIndex = operations.indexOf(COMMA);
-                    int nextSplitIndex = operations.indexOf(SPLITERATOR);
-                    int sizeToRemove = Integer.parseInt(operations.substring(++splitIndex, nextSplitIndex));
+                    int nextSplitIndex = operations.indexOf(COMMA, splitIndex + 1);
+                    int sizeToRemove = Integer.parseInt(operations.substring(++splitIndex, --nextSplitIndex));
                     if (operations.charAt(0) == START_WITH_B) {
                         removeFromAsks(sizeToRemove);
                     } else {

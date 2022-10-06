@@ -7,6 +7,9 @@ import java.io.IOException;
 import service.FileReaderService;
 
 public class FileReaderServiceImpl implements FileReaderService {
+    private static final String EXECUTIVE_FOR_WINDOWS = "\r\n";
+    private static final String EXECUTIVE2_FOR_LINUX = "\n";
+
     @Override
     public StringBuilder readFile(String filePath) {
         StringBuilder builder = new StringBuilder();
@@ -18,7 +21,10 @@ public class FileReaderServiceImpl implements FileReaderService {
                 builder.append((char) value);
                 value = reader.read();
             }
-            return builder.isEmpty() ? builder : builder.append("\r\nq,");
+            StringBuilder cleanBuilder = new StringBuilder(builder.toString()
+                    .replaceAll(EXECUTIVE_FOR_WINDOWS, "")
+                    .replaceAll(EXECUTIVE2_FOR_LINUX, ""));
+            return cleanBuilder.isEmpty() ? cleanBuilder : cleanBuilder.append("q,");
         } catch (IOException e) {
             throw new RuntimeException("Cannot read file: " + file.getName() + e);
         }
