@@ -1,7 +1,6 @@
 package service.impl;
 
-import java.util.Map;
-import model.Market;
+import model.OrderBook;
 import service.ParseService;
 
 public class ParseServiceImpl implements ParseService {
@@ -10,12 +9,17 @@ public class ParseServiceImpl implements ParseService {
     private static final Character ENDS_WITH_D = 'd';
     private static final int EXECUTE_SYMBOLS = 2;
     private static final int BEST_OPERATION_STRING_SIZE = 7;
-    private final Market market = Market.getInstance();
-
+    private final OrderBook orderBook = OrderBook.getInstance();
+    private int bestBid;
+    private int bestAsk;
 
     @Override
     public StringBuilder parse(StringBuilder operations) {
         StringBuilder result = new StringBuilder();
+        bestAsk = 0;
+        bestBid = Integer.MAX_VALUE;
+        orderBook.orders.put(bestAsk,0);
+        orderBook.orders.put(bestBid,0);
         boolean firstLine = true;
         while (operations.length() > EXECUTE_SYMBOLS) {
             switch (operations.charAt(0)) {
@@ -45,27 +49,13 @@ public class ParseServiceImpl implements ParseService {
                     if (operations.charAt(0) == START_WITH_B) {
                         char endsWith = operations.charAt(BEST_OPERATION_STRING_SIZE);
                         if (endsWith == ENDS_WITH_D) {
-                            int bidKey = market.bids.entrySet().stream()
-                                    .filter(element -> element.getValue() > 0)
-                                    .map(Map.Entry::getKey)
-                                    .findFirst()
-                                    .orElseThrow(
-                                            () -> new RuntimeException("Cannot get element from bids. "
-                                                    + "Looks like map has no bids with size > 0"));
-                            result.append(bidKey)
+                            result.append(bestBid)
                                     .append(",")
-                                    .append(market.bids.get(bidKey));
+                                    .append(orderBook.orders.get(bestBid));
                         } else {
-                            int askKey = market.asks.entrySet().stream()
-                                    .filter(element -> element.getValue() > 0)
-                                    .map(Map.Entry::getKey)
-                                    .findFirst()
-                                    .orElseThrow(
-                                            () -> new RuntimeException("Cannot get element from asks. "
-                                                    + "Looks like map has no asks with size > 0"));
-                            result.append(askKey)
+                            result.append(bestAsk)
                                     .append(",")
-                                    .append(market.asks.get(askKey));
+                                    .append(orderBook.orders.get(bestAsk));
                         }
                     } else {
                         splitIndex = operations.indexOf(COMMA);
@@ -83,9 +73,9 @@ public class ParseServiceImpl implements ParseService {
                     int nextSplitIndex = operations.indexOf(COMMA, splitIndex + 1);
                     int sizeToRemove = Integer.parseInt(operations.substring(++splitIndex, --nextSplitIndex));
                     if (operations.charAt(0) == START_WITH_B) {
-                        removeFromAsks(sizeToRemove);
+                        removeFromBestAsks(sizeToRemove);
                     } else {
-                        removeFromBids(sizeToRemove);
+                        removeFromBestBids(sizeToRemove);
                     }
                     splitIndex = operations.indexOf(COMMA, nextSplitIndex);
                     operations.delete(0, --splitIndex);
@@ -96,82 +86,117 @@ public class ParseServiceImpl implements ParseService {
     }
 
     private void updateBids(int price, int size) {
-        for (Map.Entry<Integer, Integer> entry : market.asks.entrySet()) {
-            if (entry.getValue() < 0) {
-                continue;
+        if (price < bestAsk) {
+            orderBook.orders.put(price, size);
+            if (price > bestBid) {
+                bestBid = price;
             }
-            if (price >= entry.getKey()) {
-                if (size >= 0) {
-                    size -= (entry.getValue());
-                    entry.setValue(0);
-                } else {
-                    entry.setValue(entry.getValue() - size);
+            return;
+        }
+        do {
+            if (orderBook.orders.get(bestAsk) >= size) {
+                orderBook.orders.put(bestAsk, orderBook.orders.get(bestAsk) - size);
+                updateBestAsk();
+                return;
+            } else {
+                size -= orderBook.orders.get(bestAsk);
+                orderBook.orders.put(bestAsk, 0);
+                do {
+                    bestAsk = orderBook.orders.ceilingKey(++bestAsk);
+                } while (orderBook.orders.get(bestAsk) == 0 && bestAsk < price);
+                if (price < bestAsk) {
+                    orderBook.orders.put(price, size);
+                    bestBid = price;
+                    updateBestBid();
                     return;
                 }
             }
+        } while (size > 0);
+    }
+
+    private void updateBestBid() {
+        if (orderBook.orders.get(bestBid) > 0 || bestBid == 0) {
+            return;
         }
-        market.bids.put(price, size);
+        int size;
+        do {
+            size = orderBook.orders.floorEntry(--bestBid).getValue();
+        }  while (size == 0);
+        bestBid = orderBook.orders.floorEntry(bestBid).getKey();
     }
 
     private void updateAsks(int price, int size) {
-        for (Map.Entry<Integer, Integer> entry : market.bids.entrySet()) {
-            if (entry.getValue() < 0) {
-                continue;
+        if (price > bestBid) {
+            orderBook.orders.put(price, size);
+            if (price < bestAsk) {
+                bestAsk = price;
             }
-            if (price <= entry.getKey()) {
-                if (size >= entry.getValue()) {
-                    size -= entry.getValue();
-                    entry.setValue(0);
-                } else {
-                    entry.setValue(entry.getValue() - size);
+            return;
+        }
+        do {
+            if (orderBook.orders.get(bestBid) >= size) {
+                orderBook.orders.put(bestBid, orderBook.orders.get(bestBid) - size);
+                updateBestBid();
+                return;
+            } else {
+                size -= orderBook.orders.get(bestBid);
+                orderBook.orders.put(bestBid, 0);
+                do {
+                    bestBid = orderBook.orders.floorKey(--bestBid);
+                } while (orderBook.orders.get(bestBid) == 0 && bestBid > price);
+                if (price > bestBid) {
+                    orderBook.orders.put(price, size);
+                    bestAsk = price;
+                    updateBestAsk();
                     return;
                 }
             }
+        } while (size > 0);
+    }
+
+    private void updateBestAsk() {
+        if (orderBook.orders.get(bestAsk) > 0 || bestAsk == Integer.MAX_VALUE) {
+            return;
         }
-        market.asks.put(price, size);
+        int size;
+        do {
+            size = orderBook.orders.ceilingEntry(++bestAsk).getValue();
+        }  while (size == 0);
+        bestAsk = orderBook.orders.ceilingEntry(bestAsk).getKey();
     }
 
     private int querySizeByPrice(int price) {
-        Integer quantity = market.bids.get(price);
-        if (quantity == null) {
-            quantity = market.asks.get(price);
-            if (quantity == null) {
-                return 0;
-            }
-        }
-        return quantity;
+        return orderBook.orders.get(price) == null ? 0 : orderBook.orders.get(price);
     }
 
-    private void removeFromAsks(int sizeToSubtract) {
-            for (Map.Entry<Integer, Integer> entry : market.asks.entrySet()) {
-                if (entry.getValue() < 0) {
-                    continue;
-                }
-                if (sizeToSubtract >= entry.getValue()) {
-                    sizeToSubtract -= entry.getValue();
-                    entry.setValue(0);
-                } else {
-                    entry.setValue(entry.getValue() - sizeToSubtract);
-                    return;
-                }
-            }
-            throw new RuntimeException("Cannot operate remove operation with 'BUY', because you "
-                    + " have no enough stored goods corresponds to request quantity!");
-        }
-
-    private void removeFromBids(int sizeToSubtract) {
-        for (Map.Entry<Integer, Integer> entry : market.bids.entrySet()) {
-            if (entry.getValue() < 0) {
-                continue;
-            }
-            if (sizeToSubtract >= entry.getValue()) {
-                sizeToSubtract -= entry.getValue();
-                entry.setValue(0);
-            } else {
-                entry.setValue(entry.getValue() - sizeToSubtract);
+    private void removeFromBestAsks(int sizeToSubtract) {
+        do {
+            if (orderBook.orders.get(bestAsk) >= sizeToSubtract) {
+                orderBook.orders.put(bestAsk, orderBook.orders.get(bestAsk) - sizeToSubtract);
+                updateBestBid();
                 return;
+            } else {
+                sizeToSubtract -= orderBook.orders.get(bestAsk);
+                orderBook.orders.put(bestAsk, 0);
+                updateBestAsk();
             }
-        }
+        } while (sizeToSubtract > 0 && bestAsk < Integer.MAX_VALUE);
+        throw new RuntimeException("Cannot operate remove operation with 'BUY', because you "
+                + " have no enough stored goods corresponds to request quantity!");
+    }
+
+    private void removeFromBestBids(int sizeToSubtract) {
+        do {
+            if (orderBook.orders.get(bestBid) >= sizeToSubtract) {
+                orderBook.orders.put(bestBid, orderBook.orders.get(bestBid) - sizeToSubtract);
+                updateBestAsk();
+                return;
+            } else {
+                sizeToSubtract -= orderBook.orders.get(bestBid);
+                orderBook.orders.put(bestBid, 0);
+                updateBestBid();
+            }
+        } while (sizeToSubtract > 0 && bestBid > 0);
         throw new RuntimeException("Cannot operate remove operation with 'SELL', because you "
                 + "have no enough stored goods corresponds to request quantity!");
     }
