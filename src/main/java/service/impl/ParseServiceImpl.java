@@ -119,8 +119,14 @@ public class ParseServiceImpl implements ParseService {
             return;
         }
         int size;
+        int price;
         do {
             size = orderBook.orders.floorEntry(--bestBid).getValue();
+            price = orderBook.orders.floorEntry(bestBid).getKey();
+            if (price == 0) {
+                bestBid = Integer.MAX_VALUE;
+                return;
+            }
         }  while (size == 0);
         bestBid = orderBook.orders.floorEntry(bestBid).getKey();
     }
@@ -159,8 +165,14 @@ public class ParseServiceImpl implements ParseService {
             return;
         }
         int size;
+        int price;
         do {
             size = orderBook.orders.ceilingEntry(++bestAsk).getValue();
+            price = orderBook.orders.ceilingEntry(bestAsk).getKey();
+            if (price == Integer.MAX_VALUE) {
+                bestAsk = 0;
+                return;
+            }
         }  while (size == 0);
         bestAsk = orderBook.orders.ceilingEntry(bestAsk).getKey();
     }
@@ -174,6 +186,7 @@ public class ParseServiceImpl implements ParseService {
             if (orderBook.orders.get(bestAsk) >= sizeToSubtract) {
                 orderBook.orders.put(bestAsk, orderBook.orders.get(bestAsk) - sizeToSubtract);
                 updateBestBid();
+                updateBestAsk();
                 return;
             } else {
                 sizeToSubtract -= orderBook.orders.get(bestAsk);
@@ -190,6 +203,7 @@ public class ParseServiceImpl implements ParseService {
             if (orderBook.orders.get(bestBid) >= sizeToSubtract) {
                 orderBook.orders.put(bestBid, orderBook.orders.get(bestBid) - sizeToSubtract);
                 updateBestAsk();
+                updateBestBid();
                 return;
             } else {
                 sizeToSubtract -= orderBook.orders.get(bestBid);

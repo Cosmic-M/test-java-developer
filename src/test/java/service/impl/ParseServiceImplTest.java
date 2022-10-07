@@ -197,4 +197,46 @@ class ParseServiceImplTest {
 
         assertEquals(output, parseService.parse(input).toString());
     }
+
+    @Test
+    public void parse_tooManyCrossingData_ok() {
+        StringBuilder input = new StringBuilder("u,15,5,ask"
+                + "u,10,5,bid"
+                + "u,8,3,ask"
+                + "u,9,5,bid"
+                + "u,8,3,ask"
+                + "u,6,5,bid"
+                + "u,12,5,ask"
+                + "u,13,5,ask"
+                + "u,9,5,ask"
+                + "o,sell,1"
+                + "o,buy,2"
+                + "o,sell,2"
+                + "o,buy,10"
+                + "u,10,5,bid"
+                + "u,9,5,ask"
+                + "o,buy,4"
+                + "o,sell,2"
+                + "u,15,5,ask"
+                + "u,10,5,bid"
+                + "u,8,3,ask"
+                + "u,9,5,bid"
+                + "u,8,3,ask"
+                + "u,6,5,bid"
+                + "u,12,5,ask"
+                + "u,13,5,ask"
+                + "u,9,5,ask"
+                + "o,sell,1"
+                + "o,buy,2"
+                + "o,sell,2"
+                + "o,buy,10"
+                + "q,best_bid"
+                + "q,best_ask"
+                + "q,size,12"
+                + "q,");
+
+        String output = "6,2\n15,4\n0";
+
+        assertEquals(output, parseService.parse(input).toString());
+    }
 }
