@@ -22,6 +22,14 @@ public class ParseServiceImpl implements ParseService {
         orderBook.orders.put(bestBid,0);
         boolean firstLine = true;
         while (operations.length() > EXECUTE_SYMBOLS) {
+            if ((bestAsk == 0 && bestBid == 0)
+                    || (bestAsk == Integer.MAX_VALUE && bestBid == Integer.MAX_VALUE)) {
+                orderBook.orders.clear();
+                bestAsk = 0;
+                bestBid = Integer.MAX_VALUE;
+                orderBook.orders.put(bestAsk,0);
+                orderBook.orders.put(bestBid,0);
+            }
             switch (operations.charAt(0)) {
                 case 'u':
                     operations.delete(0, 2);

@@ -239,4 +239,40 @@ class ParseServiceImplTest {
 
         assertEquals(output, parseService.parse(input).toString());
     }
+
+    @Test
+    public void parse_bestBidRefresh_ok() {
+        StringBuilder input = new StringBuilder("u,15,2,ask"
+                + "u,13,3,ask"
+                + "u,15,5,bid"
+                + "u,10,3,bid"
+                + "u,8,3,ask"
+                + "u,12,1,bid"
+                + "u,14,3,ask"
+                + "q,best_bid"
+                + "q,best_ask"
+                + "q,");
+
+        String output = "12,1\n14,3";
+
+        assertEquals(output, parseService.parse(input).toString());
+    }
+
+    @Test
+    public void parse_bestAskRefresh_ok() {
+        StringBuilder input = new StringBuilder("u,11,5,bid"
+                + "u,12,4,bid"
+                + "u,10,9,ask"
+                + "u,12,7,ask"
+                + "u,13,7,bid"
+                + "u,11,4,bid"
+                + "u,13,5,ask"
+                + "q,best_bid"
+                + "q,best_ask"
+                + "q,");
+
+        String output = "11,4\n13,5";
+
+        assertEquals(output, parseService.parse(input).toString());
+    }
 }
