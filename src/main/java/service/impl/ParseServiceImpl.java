@@ -129,8 +129,9 @@ public class ParseServiceImpl implements ParseService {
         int size;
         int price;
         do {
-            size = orderBook.orders.floorEntry(--bestBid).getValue();
-            price = orderBook.orders.floorEntry(bestBid).getKey();
+            price = orderBook.orders.floorKey(--bestBid);
+            bestBid = price;
+            size = orderBook.orders.floorEntry(bestBid).getValue();
             if (price == 0) {
                 bestBid = Integer.MAX_VALUE;
                 return;
@@ -175,8 +176,9 @@ public class ParseServiceImpl implements ParseService {
         int size;
         int price;
         do {
-            size = orderBook.orders.ceilingEntry(++bestAsk).getValue();
-            price = orderBook.orders.ceilingEntry(bestAsk).getKey();
+            price = orderBook.orders.ceilingKey(++bestAsk);
+            bestAsk = price;
+            size = orderBook.orders.ceilingEntry(bestAsk).getValue();
             if (price == Integer.MAX_VALUE) {
                 bestAsk = 0;
                 return;

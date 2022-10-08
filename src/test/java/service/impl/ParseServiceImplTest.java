@@ -89,6 +89,24 @@ class ParseServiceImplTest {
         assertEquals("0", parseService.parse(input).toString());
     }
 
+
+
+
+    @Test
+    public void parse_manySizeRequests_ok() {
+        StringBuilder input = new StringBuilder("u,14,5,ask"
+                + "q,size,14"
+                + "u,13,5,bid"
+                + "q,size,13"
+                + "u,16,2,bid"
+                + "q,size,14"
+                + "u,11,2,ask"
+                + "q,size,13"
+                + "q,");
+
+        assertEquals("5\n5\n3\n3", parseService.parse(input).toString());
+    }
+
     @Test
     public void parse_removesSizeOutOfAsks_ok() {
         StringBuilder input = new StringBuilder("u,15,2,ask"
@@ -272,6 +290,73 @@ class ParseServiceImplTest {
                 + "q,");
 
         String output = "11,4\n13,5";
+
+        assertEquals(output, parseService.parse(input).toString());
+    }
+
+    @Test
+    public void parse_bigComboWithBidsAsks_ok() {
+        StringBuilder input = new StringBuilder("u,15,2,ask"
+                + "u,14,3,ask"
+                + "u,13,5,ask"
+                + "u,12,3,ask"
+                + "u,11,2,ask"
+                + "u,9,1,bid"
+                + "u,8,4,bid"
+                + "u,7,10,bid"
+                + "u,6,4,bid"
+                + "u,5,1,bid"
+                + "o,buy,2"
+                + "o,buy,2"
+                + "u,11,1,ask"
+                + "o,buy,3"
+                + "o,buy,2"
+                + "o,buy,2"
+                + "o,buy,2"
+                + "o,buy,2"
+                + "o,sell,3"
+                + "o,sell,3"
+                + "u,9,1,bid"
+                + "u,8,1,bid"
+                + "u,10,1,bid"
+                + "o,sell,3"
+                + "o,sell,3"
+                + "o,sell,3"
+                + "o,sell,3"
+                + "o,sell,3"
+                + "q,best_bid"
+                + "q,best_ask"
+                + "q,");
+
+        String output = "6,1\n15,1";
+
+        assertEquals(output, parseService.parse(input).toString());
+    }
+
+    @Test
+    public void parse_repeatQuerySizeData_ok() {
+        StringBuilder input = new StringBuilder("u,11,1,ask"
+                + "u,9,1,bid"
+                + "u,12,1,ask"
+                + "u,8,1,bid"
+                + "u,11,1,ask"
+                + "u,9,1,bid"
+                + "u,9,1,ask"
+                + "u,11,1,bid"
+                + "q,size,9"
+                + "q,size,9"
+                + "q,size,10"
+                + "q,size,11"
+                + "q,size,11"
+                + "q,best_bid"
+                + "q,best_ask"
+                + "o,sell,1"
+                + "o,buy,1"
+                + "q,size,8"
+                + "q,size,12"
+                + "q,");
+
+        String output = "0\n0\n0\n0\n0\n8,1\n12,1\n0\n0";
 
         assertEquals(output, parseService.parse(input).toString());
     }
