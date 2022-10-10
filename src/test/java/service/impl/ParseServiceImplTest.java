@@ -1,8 +1,10 @@
 package service.impl;
 
 import model.OrderBook;
+import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.rules.ExpectedException;
 import service.ParseService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -359,55 +361,6 @@ class ParseServiceImplTest {
     }
 
     @Test
-    public void parse_manyDataWithResetOneBest_ok() {
-        StringBuilder input = new StringBuilder("u,15,2,ask"
-                + "u,14,3,ask"
-                + "u,13,5,ask"
-                + "u,13,5,ask"
-                + "u,13,5,ask"
-                + "u,13,5,ask"
-                + "u,12,3,ask"
-                + "u,11,2,ask"
-                + "u,9,1,bid"
-                + "u,8,4,bid"
-                + "u,7,10,bid"
-                + "u,6,4,bid"
-                + "u,5,1,bid"
-                + "o,buy,1"
-                + "o,buy,1"
-                + "u,10,1,ask"
-                + "o,buy,1"
-                + "u,10,1,ask"
-                + "o,buy,1"
-                + "o,buy,1"
-                + "o,buy,1"
-                + "u,11,1,ask"
-                + "o,buy,11"
-                + "u,4,1,bid"
-                + "u,11,3,ask"
-                + "o,buy,2"
-                + "u,10,1,ask"
-                + "o,sell,1"
-                + "u,20,2,bid"
-                + "o,sell,2"
-                + "u,5,2,ask"
-                + "o,sell,2"
-                + "u,9,1,bid"
-                + "u,8,1,bid"
-                + "o,buy,1"
-                + "u,10,1,bid"
-                + "o,sell,15"
-                + "q,best_bid"
-                + "q,size,15"
-                + "q,size,4"
-                + "q,");
-
-        String output = "5,1\n0\n1";
-
-        assertEquals(output, parseService.parse(input).toString());
-    }
-
-    @Test
     public void parse_resetBestAskBeforeUpdate_ok() {
         StringBuilder input = new StringBuilder("u,13,5,ask"
                 + "u,8,5,bid"
@@ -435,5 +388,54 @@ class ParseServiceImplTest {
         String output = "9,5\n12,5";
 
         assertEquals(output, parseService.parse(input).toString());
+    }
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @Test
+    public void parse_SubtractOperationFirstEntry_notOk() {
+        new StringBuilder("o,buy,1"
+                + "q,");
+
+        exception.expect(RuntimeException.class);
+    }
+
+    @Test
+    public void parse_RequestBestBidFirstEntry_notOk() {
+        new StringBuilder("q,best_bid"
+                + "q,");
+
+        exception.expect(RuntimeException.class);
+    }
+
+    @Test
+    public void parse_RequestAskFirstEntry_notOk() {
+        new StringBuilder("q,best_ask"
+                + "q,");
+
+        exception.expect(RuntimeException.class);
+    }
+
+    @Test
+    public void parse_notEnoughGoodsWhileSubtractFromBids_notOk() {
+        new StringBuilder("u,10,5,bid"
+                + "u,9,5,bid"
+                + "0,sell,11"
+                + "u,15,10,ask"
+                + "q,");
+
+        exception.expect(RuntimeException.class);
+    }
+
+    @Test
+    public void parse_notEnoughGoodsWhileSubtractFromAsks_notOk() {
+        new StringBuilder("u,15,5,ask"
+                + "u,14,5,ask"
+                + "0,buy,11"
+                + "u,9,10,bid"
+                + "q,");
+
+        exception.expect(RuntimeException.class);
     }
 }

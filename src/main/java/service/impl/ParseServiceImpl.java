@@ -90,10 +90,18 @@ public class ParseServiceImpl implements ParseService {
         if (operations.charAt(0) == START_WITH_B) {
             char endsWith = operations.charAt(BEST_OPERATION_STRING_SIZE);
             if (endsWith == ENDS_WITH_D) {
+                if (bestBid == 0) {
+                    throw new RuntimeException("Cannot introduce best bid because of there isn't "
+                    + "any relevant goods to sell in the order book");
+                }
                 result.append(bestBid)
                         .append(",")
                         .append(orderBook.orders.get(bestBid));
             } else {
+                if (bestAsk == Integer.MAX_VALUE) {
+                    throw new RuntimeException("Cannot introduce best ask because of there isn't "
+                            + "any relevant goods to buy in the order book");
+                }
                 result.append(bestAsk)
                         .append(",")
                         .append(orderBook.orders.get(bestAsk));
