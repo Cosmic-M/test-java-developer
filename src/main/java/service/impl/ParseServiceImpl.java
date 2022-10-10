@@ -223,7 +223,7 @@ public class ParseServiceImpl implements ParseService {
                 orderBook.orders.put(bestAsk, 0);
                 updateBestBidAsk();
             }
-        } while (sizeToRemove > 0);
+        } while (sizeToRemove > 0 && bestAsk != Integer.MAX_VALUE);
         throw new RuntimeException("Cannot operate remove operation with 'BUY', because there "
                 + "isn't enough stored goods corresponds to request quantity!");
     }
@@ -242,7 +242,7 @@ public class ParseServiceImpl implements ParseService {
                 orderBook.orders.put(bestBid, 0);
                 updateBestBidAsk();
             }
-        } while (sizeToRemove > 0);
+        } while (sizeToRemove > 0 && bestBid != 0);
         throw new RuntimeException("Cannot operate remove operation with 'SELL', because there "
                 + "isn't enough stored goods corresponds to request quantity!");
     }

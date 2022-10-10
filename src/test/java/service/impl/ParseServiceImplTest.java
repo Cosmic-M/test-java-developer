@@ -1,13 +1,12 @@
 package service.impl;
 
 import model.OrderBook;
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.ExpectedException;
 import service.ParseService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ParseServiceImplTest {
     private ParseService parseService;
@@ -390,52 +389,60 @@ class ParseServiceImplTest {
         assertEquals(output, parseService.parse(input).toString());
     }
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
     @Test
     public void parse_SubtractOperationFirstEntry_notOk() {
-        new StringBuilder("o,buy,1"
+        StringBuilder input = new StringBuilder("o,buy,1"
                 + "q,");
 
-        exception.expect(RuntimeException.class);
+        Exception exc = assertThrows(RuntimeException.class, () -> parseService.parse(input));
+        assertEquals("Exception in sequence of operations: "
+                + "there is no sense in 'SUBTRACT' operation if order`s "
+                + "book has no any goods available", exc.getMessage());
     }
 
     @Test
     public void parse_RequestBestBidFirstEntry_notOk() {
-        new StringBuilder("q,best_bid"
+        StringBuilder input = new StringBuilder("q,best_bid"
                 + "q,");
 
-        exception.expect(RuntimeException.class);
+        Exception exc = assertThrows(RuntimeException.class, () -> parseService.parse(input));
+        assertEquals("Cannot introduce best bid because of there isn't "
+                + "any relevant goods to sell in the order book", exc.getMessage());
     }
 
     @Test
     public void parse_RequestAskFirstEntry_notOk() {
-        new StringBuilder("q,best_ask"
+        StringBuilder input = new StringBuilder("q,best_ask"
                 + "q,");
 
-        exception.expect(RuntimeException.class);
+        Exception exc = assertThrows(RuntimeException.class, () -> parseService.parse(input));
+        assertEquals("Cannot introduce best ask because of there isn't "
+                + "any relevant goods to buy in the order book", exc.getMessage());
     }
 
     @Test
-    public void parse_notEnoughGoodsWhileSubtractFromBids_notOk() {
-        new StringBuilder("u,10,5,bid"
+    public void parse_notEnoughGoodsToSubtractFromBids_notOk() {
+        StringBuilder input = new StringBuilder("u,10,5,bid"
                 + "u,9,5,bid"
-                + "0,sell,11"
+                + "o,sell,11"
                 + "u,15,10,ask"
                 + "q,");
 
-        exception.expect(RuntimeException.class);
+        Exception exc = assertThrows(RuntimeException.class, () -> parseService.parse(input));
+        assertEquals("Cannot operate remove operation with 'SELL', because there isn't "
+                + "enough stored goods corresponds to request quantity!", exc.getMessage());
     }
 
     @Test
-    public void parse_notEnoughGoodsWhileSubtractFromAsks_notOk() {
-        new StringBuilder("u,15,5,ask"
+    public void parse_notEnoughGoodsToSubtractFromAsks_notOk() {
+        StringBuilder input = new StringBuilder("u,15,5,ask"
                 + "u,14,5,ask"
-                + "0,buy,11"
+                + "o,buy,11"
                 + "u,9,10,bid"
                 + "q,");
 
-        exception.expect(RuntimeException.class);
+        Exception exc = assertThrows(RuntimeException.class, () -> parseService.parse(input));
+        assertEquals("Cannot operate remove operation with 'BUY', because there isn't "
+                + "enough stored goods corresponds to request quantity!", exc.getMessage());
     }
 }
