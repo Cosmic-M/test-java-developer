@@ -150,6 +150,48 @@ class ParseServiceImplTest {
     }
 
     @Test
+    public void parse_updateBestBidWithZeroSize_ok() {
+        StringBuilder input = new StringBuilder("u,9,0,bid"
+                + "u,9,1,bid"
+                + "u,11,1,ask"
+                + "q,best_bid"
+                + "q,best_ask"
+                + "u,9,0,bid"
+                + "u,11,0,ask"
+                + "q,size,11"
+                + "q,");
+
+        String output = "9,1\n11,1\n0";
+        assertEquals(output, parseService.parse(input).toString());
+    }
+
+    @Test
+    public void parse_updateBestAskWithZeroSize_ok() {
+        StringBuilder input = new StringBuilder("u,9,0,ask"
+                + "u,11,5,ask"
+                + "u,8,5,bid"
+                + "q,best_bid"
+                + "q,best_ask"
+                + "u,8,0,bid"
+                + "u,11,0,ask"
+                + "u,10,1,bid"
+                + "q,best_bid"
+                + "q,");
+
+        String output = "8,5\n11,5\n10,1";
+        assertEquals(output, parseService.parse(input).toString());
+    }
+
+    @Test
+    public void parse_test_ok() {
+        StringBuilder input = new StringBuilder(
+                "q,");
+
+        String output = "";
+        assertEquals(output, parseService.parse(input).toString());
+    }
+
+    @Test
     public void parse_fillDataConsequentlyStartsWithBid_ok() {
         StringBuilder input = new StringBuilder("u,9,5,bid"
                 + "u,10,5,bid"

@@ -151,6 +151,7 @@ public class ParseServiceImpl implements ParseService {
                 if (price >= bestBid) {
                     orderBook.orders.put(price, size);
                     bestBid = price;
+                    updateBestBidAsk();
                     return;
                 }
                 orderBook.orders.put(price, size);
@@ -178,6 +179,7 @@ public class ParseServiceImpl implements ParseService {
                 if (price <= bestAsk) {
                     orderBook.orders.put(price, size);
                     bestAsk = price;
+                    updateBestBidAsk();
                     return;
                 }
                 orderBook.orders.put(price, size);
