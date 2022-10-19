@@ -1,0 +1,9 @@
+u,17,4,ask
+u,11,3,ask
+u,10,3,ask
+u,15,2,ask
+u,15,2,ask
+u,10,3,ask
+u,19,15,ask
+u,17,1,ask
+q,best_ask

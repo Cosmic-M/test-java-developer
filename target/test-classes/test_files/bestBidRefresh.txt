@@ -1,0 +1,9 @@
+u,15,2,ask
+u,13,3,ask
+u,15,5,bid
+u,10,3,bid
+u,8,3,ask
+u,12,1,bid
+u,14,3,ask
+q,best_bid
+q,best_ask

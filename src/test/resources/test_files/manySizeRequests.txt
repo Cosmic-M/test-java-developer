@@ -1,0 +1,8 @@
+u,14,5,ask
+q,size,14
+u,13,5,bid
+q,size,13
+u,16,2,bid
+q,size,14
+u,11,2,ask
+q,size,13

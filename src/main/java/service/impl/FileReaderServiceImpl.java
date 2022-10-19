@@ -7,24 +7,28 @@ import java.io.IOException;
 import service.FileReaderService;
 
 public class FileReaderServiceImpl implements FileReaderService {
-    private static final String EXECUTIVE_FOR_WINDOWS = "\r\n";
-    private static final String EXECUTIVE2_FOR_LINUX = "\n";
+    private final ParseServiceImpl parseService = new ParseServiceImpl();
 
     @Override
     public StringBuilder readFile(String filePath) {
-        StringBuilder builder = new StringBuilder();
         File file = new File(filePath);
+        StringBuilder builder = new StringBuilder();
         try {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             int value = reader.read();
             while (value != -1) {
+                if (value == 10 || value == 13) {
+                    parseService.parse(builder);
+                    builder.delete(0, builder.length());
+                    reader.read();
+                    value = reader.read();
+                    continue;
+                }
                 builder.append((char) value);
                 value = reader.read();
             }
-            StringBuilder cleanBuilder = new StringBuilder(builder.toString()
-                    .replaceAll(EXECUTIVE_FOR_WINDOWS, "")
-                    .replaceAll(EXECUTIVE2_FOR_LINUX, ""));
-            return cleanBuilder.isEmpty() ? cleanBuilder : cleanBuilder.append("q,");
+            parseService.parse(builder);
+            return parseService.getResult();
         } catch (IOException e) {
             throw new RuntimeException("Cannot read file: " + file.getName() + e);
         }

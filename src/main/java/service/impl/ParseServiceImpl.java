@@ -7,60 +7,42 @@ public class ParseServiceImpl implements ParseService {
     private static final String COMMA = ",";
     private static final Character START_WITH_B = 'b';
     private static final Character ENDS_WITH_D = 'd';
-    private static final int EXECUTE_SYMBOLS = 2;
     private static final int BEST_OPERATION_STRING_SIZE = 7;
     private final OrderBook orderBook = OrderBook.getInstance();
+    private int bestBid;
+    private int bestAsk;
     private static final char UPDATE_OPERATION = 'u';
     private static final char QUERY_OPERATION = 'q';
     private static final char SUBTRACT_OPERATION = 'o';
     private int splitIndex;
     private int price;
-    private StringBuilder result;
-    private int bestBid;
-    private int bestAsk;
+    private final StringBuilder result;
     private boolean firstLine;
 
-
-    @Override
-    public StringBuilder parse(StringBuilder operations) {
-        result = new StringBuilder();
-        bestAsk = Integer.MAX_VALUE;
+    public ParseServiceImpl() {
         bestBid = 0;
-        orderBook.orders.put(bestAsk, 0);
-        orderBook.orders.put(bestBid, 0);
+        bestAsk = Integer.MAX_VALUE;
+        result = new StringBuilder();
         firstLine = true;
-        findFirstEntry(operations);
-        while (operations.length() > EXECUTE_SYMBOLS) {
-            if (bestBid == 0 && bestAsk == Integer.MAX_VALUE) {
-                findFirstEntry(operations);
-                if (operations.length() <= EXECUTE_SYMBOLS) {
-                    return result;
-                }
-            }
-            switch (operations.charAt(0)) {
-                case UPDATE_OPERATION -> updateData(operations);
-                case QUERY_OPERATION -> addQueryResultToQueryList(operations);
-                case SUBTRACT_OPERATION -> subtractData(operations);
-                default -> throw new RuntimeException("Symbol of operation doesn't match to "
-                        + "relevant options. Please check input file and run app again");
-            }
-        }
-        return result;
+        orderBook.orders.put(bestBid, 0);
+        orderBook.orders.put(bestAsk, 0);
     }
 
-    private void findFirstEntry(StringBuilder operations) {
-        while (operations.length() > EXECUTE_SYMBOLS) {
-            switch (operations.charAt(0)) {
-                case UPDATE_OPERATION -> {
-                    updateData(operations);
-                    return;
-                }
-                case QUERY_OPERATION -> addQueryResultToQueryList(operations);
-                default -> throw new RuntimeException("Exception in sequence of operations: "
-                        + "there is no sense in 'SUBTRACT' operation if order`s "
-                        + "book has no any goods available");
-            }
+    @Override
+    public void parse(StringBuilder operation) {
+        switch (operation.charAt(0)) {
+            case UPDATE_OPERATION -> updateData(operation);
+            case QUERY_OPERATION -> addQueryResultToQueryList(operation);
+            case SUBTRACT_OPERATION -> subtractData(operation);
         }
+    }
+
+    public void resetOrderBook() {
+        OrderBook.clearOrderBook();
+    }
+
+    public StringBuilder getResult() {
+        return result;
     }
 
     private void updateData(StringBuilder operations) {
@@ -76,8 +58,6 @@ public class ParseServiceImpl implements ParseService {
         } else {
             updateAsks(price, size);
         }
-        splitIndex = operations.indexOf(COMMA);
-        operations.delete(0, --splitIndex);
     }
 
     private void addQueryResultToQueryList(StringBuilder operations) {
@@ -108,28 +88,21 @@ public class ParseServiceImpl implements ParseService {
             }
         } else {
             splitIndex = operations.indexOf(COMMA);
-            operations.delete(0, ++splitIndex);
-            splitIndex = operations.indexOf(COMMA);
-            price = Integer.parseInt(operations.substring(0, --splitIndex));
+            price = Integer.parseInt(operations.substring(++splitIndex, operations.length()));
             result.append(querySizeByPrice(price));
         }
-        splitIndex = operations.indexOf(COMMA);
-        operations.delete(0, --splitIndex);
     }
 
     private void subtractData(StringBuilder operations) {
         operations.delete(0, 2);
         splitIndex = operations.indexOf(COMMA);
-        int nextSplitIndex = operations.indexOf(COMMA, splitIndex + 1);
         int sizeToRemove = Integer
-                .parseInt(operations.substring(++splitIndex, --nextSplitIndex));
+                .parseInt(operations.substring(++splitIndex, operations.length()));
         if (operations.charAt(0) == START_WITH_B) {
             removeFromBestAsks(sizeToRemove);
         } else {
             removeFromBestBids(sizeToRemove);
         }
-        splitIndex = operations.indexOf(COMMA, nextSplitIndex);
-        operations.delete(0, --splitIndex);
     }
 
     private void updateBids(int price, int size) {
