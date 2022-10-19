@@ -4,18 +4,16 @@ import model.OrderBook;
 import service.ParseService;
 
 public class ParseServiceImpl implements ParseService {
-    private static final String COMMA = ",";
     private static final Character START_WITH_B = 'b';
+    private static final Character ENDS_WITH_Y = 'y';
     private static final Character ENDS_WITH_D = 'd';
-    private static final int BEST_OPERATION_STRING_SIZE = 7;
+    private static final int BEST_OPERATION_STRING_SIZE = 9;
     private final OrderBook orderBook = OrderBook.getInstance();
     private int bestBid;
     private int bestAsk;
     private static final char UPDATE_OPERATION = 'u';
     private static final char QUERY_OPERATION = 'q';
     private static final char SUBTRACT_OPERATION = 'o';
-    private int splitIndex;
-    private int price;
     private final StringBuilder result;
     private boolean firstLine;
 
@@ -45,30 +43,37 @@ public class ParseServiceImpl implements ParseService {
         return result;
     }
 
-    private void updateData(StringBuilder operations) {
-        operations.delete(0, 2);
-        splitIndex = operations.indexOf(COMMA);
-        price = Integer.parseInt(operations.substring(0, splitIndex));
-        operations.delete(0, ++splitIndex);
-        splitIndex = operations.indexOf(COMMA);
-        int size = Integer.parseInt(operations.substring(0, splitIndex));
-        operations.delete(0, ++splitIndex);
-        if (operations.charAt(0) == START_WITH_B) {
+    private void updateData(StringBuilder operation) {
+        operation.reverse();
+        int pow = 1;
+        int size = 0;
+        int price = 0;
+        int index = 4;
+        while (Character.isDigit(operation.charAt(index))) {
+            size += Character.getNumericValue(operation.charAt(index++)) * pow;
+            pow *= 10;
+        }
+        pow = 1;
+        index++;
+        while (Character.isDigit(operation.charAt(index))) {
+            price += Character.getNumericValue(operation.charAt(index++)) * pow;
+            pow *= 10;
+        }
+        if (operation.charAt(0) == ENDS_WITH_D) {
             updateBids(price, size);
         } else {
             updateAsks(price, size);
         }
     }
 
-    private void addQueryResultToQueryList(StringBuilder operations) {
+    private void addQueryResultToQueryList(StringBuilder operation) {
         if (!firstLine) {
             result.append("\n");
         } else {
             firstLine = false;
         }
-        operations.delete(0, 2);
-        if (operations.charAt(0) == START_WITH_B) {
-            char endsWith = operations.charAt(BEST_OPERATION_STRING_SIZE);
+        if (operation.charAt(2) == START_WITH_B) {
+            char endsWith = operation.charAt(BEST_OPERATION_STRING_SIZE);
             if (endsWith == ENDS_WITH_D) {
                 if (bestBid == 0) {
                     throw new RuntimeException("Cannot introduce best bid because of there isn't "
@@ -87,18 +92,28 @@ public class ParseServiceImpl implements ParseService {
                         .append(orderBook.orders.get(bestAsk));
             }
         } else {
-            splitIndex = operations.indexOf(COMMA);
-            price = Integer.parseInt(operations.substring(++splitIndex, operations.length()));
+            operation.reverse();
+            int pow = 1;
+            int price = 0;
+            int index = 0;
+            while (Character.isDigit(operation.charAt(index))) {
+                price += Character.getNumericValue(operation.charAt(index++)) * pow;
+                pow *= 10;
+            }
             result.append(querySizeByPrice(price));
         }
     }
 
-    private void subtractData(StringBuilder operations) {
-        operations.delete(0, 2);
-        splitIndex = operations.indexOf(COMMA);
-        int sizeToRemove = Integer
-                .parseInt(operations.substring(++splitIndex, operations.length()));
-        if (operations.charAt(0) == START_WITH_B) {
+    private void subtractData(StringBuilder operation) {
+        operation.reverse();
+        int pow = 1;
+        int sizeToRemove = 0;
+        int index = 0;
+        while (Character.isDigit(operation.charAt(index))) {
+            sizeToRemove += Character.getNumericValue(operation.charAt(index++)) * pow;
+            pow *= 10;
+        }
+        if (operation.charAt(++index) == ENDS_WITH_Y) {
             removeFromBestAsks(sizeToRemove);
         } else {
             removeFromBestBids(sizeToRemove);

@@ -17,17 +17,18 @@ public class FileReaderServiceImpl implements FileReaderService {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             int value = reader.read();
             while (value != -1) {
-                if (value == 10 || value == 13) {
+                if (value == 10) {
                     parseService.parse(builder);
                     builder.delete(0, builder.length());
-                    reader.read();
+                    value = reader.read();
+                    continue;
+                } else if (value == 13) {
                     value = reader.read();
                     continue;
                 }
                 builder.append((char) value);
                 value = reader.read();
             }
-            parseService.parse(builder);
             return parseService.getResult();
         } catch (IOException e) {
             throw new RuntimeException("Cannot read file: " + file.getName() + e);
