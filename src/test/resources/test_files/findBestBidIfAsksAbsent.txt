@@ -1,0 +1,12 @@
+u,9,4,bid
+u,11,1,bid
+u,12,3,bid
+u,10,2,bid
+u,11,7,bid
+u,10,5,bid
+u,7,3,bid
+u,12,8,bid
+u,5,15,bid
+u,13,4,bid
+u,8,14,bid
+q,best_bid
