@@ -1,7 +1,7 @@
 package service;
 
-import java.util.List;
+import java.io.File;
 
 public interface FileWriterService {
-    void writeFile(String filePath, StringBuilder output);
+    void write(File file, StringBuilder output);
 }

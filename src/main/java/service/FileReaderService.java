@@ -1,5 +1,7 @@
 package service;
 
+import java.io.File;
+
 public interface FileReaderService {
-    StringBuilder readFile(String filePath);
+    void read(File file);
 }

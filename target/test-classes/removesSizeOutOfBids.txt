@@ -1,0 +1,6 @@
+u,9,2,bid
+u,10,2,bid
+u,11,2,bid
+u,12,3,bid
+o,sell,6
+q,best_bid

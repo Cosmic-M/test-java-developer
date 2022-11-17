@@ -1,0 +1,12 @@
+u,150,3500,ask
+u,1500,300,ask
+u,10900,5000,ask
+u,950,10000,bid
+u,800,4000,bid
+u,700,30000,bid
+o,sell,3005
+o,sell,500
+o,buy,4005
+o,sell,1600
+q,best_bid
+q,best_ask

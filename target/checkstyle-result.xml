@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.29">
+<file name="C:\Users\bigfi\IdeaProjects\test-java-developer\src\main\java\Main.java">
+</file>
+<file name="C:\Users\bigfi\IdeaProjects\test-java-developer\src\main\java\model\Market.java">
+</file>
+<file name="C:\Users\bigfi\IdeaProjects\test-java-developer\src\main\java\service\FileReaderService.java">
+</file>
+<file name="C:\Users\bigfi\IdeaProjects\test-java-developer\src\main\java\service\FileWriterService.java">
+</file>
+<file name="C:\Users\bigfi\IdeaProjects\test-java-developer\src\main\java\service\impl\FileReaderServiceImpl.java">
+</file>
+<file name="C:\Users\bigfi\IdeaProjects\test-java-developer\src\main\java\service\impl\FileWriterServiceImpl.java">
+</file>
+<file name="C:\Users\bigfi\IdeaProjects\test-java-developer\src\main\java\service\impl\ParseServiceImpl.java">
+</file>
+<file name="C:\Users\bigfi\IdeaProjects\test-java-developer\src\main\java\service\ParseService.java">
+</file>
+<file name="C:\Users\bigfi\IdeaProjects\test-java-developer\src\test\java\service\impl\ParseServiceImplTest.java">
+</file>
+</checkstyle>
