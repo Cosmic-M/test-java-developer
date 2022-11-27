@@ -1,8 +1,9 @@
 Main.class
 service\impl\ParseServiceImpl.class
 model\Market.class
+concurrent\DataBinder.class
 service\FileWriterService.class
 service\impl\FileWriterServiceImpl.class
-service\FileReaderService.class
-service\ParseService.class
+service\impl\ParseService.class
 service\impl\FileReaderServiceImpl.class
+model\OrderBook.class

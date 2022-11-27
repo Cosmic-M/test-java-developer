@@ -1,16 +1,39 @@
 package service.impl;
 
 import java.util.Map;
+import concurrent.DataBinder;
 import model.Market;
-import service.ParseService;
 
-public class ParseServiceImpl implements ParseService {
+public class ParseServiceImpl implements Runnable {
+    private final DataBinder dataBinder;
     private static final String NEW_LINE = "\n";
     private static final String COMMA = ",";
     private final StringBuilder result = new StringBuilder();
+    public static int prise;
+    public static int size;
+
+    public ParseServiceImpl(DataBinder dataBinder) {
+        this.dataBinder = dataBinder;
+    }
 
     @Override
-    public void findBestAsk() {
+    public void run() {
+        int operation = dataBinder.getOperationNumber();
+        while (operation != -1) {
+            switch (operation) {
+                case 1 -> updateAsks(prise, size);
+                case 2 -> updateBids(prise, size);
+                case 3 -> removeFromAsks(size);
+                case 4 -> removeFromBids(size);
+                case 5 -> findBestAsk();
+                case 6 -> findBestBid();
+                default -> findSizeByPrice(prise);
+            }
+            operation = dataBinder.getOperationNumber();
+        }
+    }
+
+    private void findBestAsk() {
         int bestAsk = Market.asks.keySet().stream().findFirst().orElseThrow(
                 () -> new RuntimeException("Cannot introduce best ask because of there isn't "
                         + "any relevant goods to buy in the order book"));
@@ -20,8 +43,7 @@ public class ParseServiceImpl implements ParseService {
                 .append(NEW_LINE);
     }
 
-    @Override
-    public void findBestBid() {
+    private void findBestBid() {
         int bestBid = Market.bids.keySet().stream().findFirst().orElseThrow(
                 () -> new RuntimeException("Cannot introduce best bid because of there isn't "
                         + "any relevant goods to sell in the order book"));
@@ -31,8 +53,7 @@ public class ParseServiceImpl implements ParseService {
                 .append(NEW_LINE);
     }
 
-    @Override
-    public void updateBids(int price, int size) {
+    private void updateBids(int price, int size) {
         if (size == 0) {
             Market.bids.remove(price);
             return;
@@ -59,8 +80,7 @@ public class ParseServiceImpl implements ParseService {
         Market.bids.put(price, size);
     }
 
-    @Override
-    public void updateAsks(int price, int size) {
+    private void updateAsks(int price, int size) {
         if (size == 0) {
             Market.asks.remove(price);
             return;
@@ -87,8 +107,7 @@ public class ParseServiceImpl implements ParseService {
         Market.asks.put(price, size);
     }
 
-    @Override
-    public void findSizeByPrice(int price) {
+    private void findSizeByPrice(int price) {
         Integer quantity = Market.bids.get(price);
         if (quantity == null) {
             quantity = Market.asks.get(price);
@@ -105,8 +124,7 @@ public class ParseServiceImpl implements ParseService {
         }
     }
 
-    @Override
-    public void removeFromAsks(int sizeToSubtract) {
+    private void removeFromAsks(int sizeToSubtract) {
         for (Map.Entry<Integer, Integer> entry : Market.asks.entrySet()) {
             if (sizeToSubtract == entry.getValue()) {
                 Market.asks.remove(entry.getKey());
@@ -125,8 +143,7 @@ public class ParseServiceImpl implements ParseService {
                 + "there isn't enough stored goods corresponds to request quantity!");
     }
 
-    @Override
-    public void removeFromBids(int sizeToSubtract) {
+    private void removeFromBids(int sizeToSubtract) {
         for (Map.Entry<Integer, Integer> entry : Market.bids.entrySet()) {
             if (sizeToSubtract == entry.getValue()) {
                 Market.bids.remove(entry.getKey());
@@ -145,7 +162,6 @@ public class ParseServiceImpl implements ParseService {
                 + "there isn't enough stored goods corresponds to request quantity!");
     }
 
-    @Override
     public StringBuilder getResult() {
         return result;
     }
